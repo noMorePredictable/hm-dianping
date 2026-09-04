@@ -1,6 +1,0 @@
-{
-  "private": true,
-  "dependencies": {
-    "@openai/create-sites": "0.3.0"
-  }
-}
