@@ -1,0 +1,22 @@
+services:
+  rabbitmq:
+    image: rabbitmq:4.3.5-management
+    container_name: hmdp-rabbitmq
+    hostname: hmdp-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: hmdp
+      RABBITMQ_DEFAULT_PASS: hmdp123
+    volumes:
+      - hmdp-rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  hmdp-rabbitmq-data:
