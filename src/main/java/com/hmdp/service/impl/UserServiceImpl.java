@@ -4,7 +4,8 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.hmdp.dto.LoginFormDTO;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
@@ -16,8 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpSession;
+import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -96,6 +97,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
         //2.返回token
         return Result.ok(token);
+    }
+
+    @Override
+    public Result logout(String token) {
+        if (StrUtil.isBlank(token)) {
+            // 登出接口保持幂等：没有 token 也视为已经退出，方便客户端重复调用。
+            return Result.ok();
+        }
+        stringRedisTemplate.delete(LOGIN_USER_KEY + token);
+        // 当前请求结束时拦截器还会清理一次；这里先清理可避免业务代码继续读到旧用户。
+        com.hmdp.utils.UserHolder.removeUser();
+        return Result.ok();
     }
 
     private User createUserWithPhone(String phone) {

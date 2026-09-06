@@ -2,7 +2,7 @@ package com.hmdp.service;
 
 import com.hmdp.dto.Result;
 import com.hmdp.entity.Shop;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 
 /**
  * <p>
@@ -15,6 +15,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 public interface IShopService extends IService<Shop> {
 
     Result queryById(Long id);
+
+    Result saveShop(Shop shop);
 
     Result update(Shop shop);
 }

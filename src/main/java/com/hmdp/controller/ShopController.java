@@ -9,7 +9,7 @@ import com.hmdp.service.IShopService;
 import com.hmdp.utils.SystemConstants;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  * <p>
@@ -43,10 +43,8 @@ public class ShopController {
      */
     @PostMapping
     public Result saveShop(@RequestBody Shop shop) {
-        // 写入数据库
-        shopService.save(shop);
-        // 返回店铺id
-        return Result.ok(shop.getId());
+        // 统一走业务方法，确保新增 ID 同步加入 BloomFilter 并广播缓存失效。
+        return shopService.saveShop(shop);
     }
 
     /**

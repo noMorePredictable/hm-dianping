@@ -7,8 +7,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  * <p>
@@ -27,5 +28,17 @@ public class VoucherOrderController {
     public Result seckillVoucher(@PathVariable("id") Long voucherId) {
 
         return voucherOrderService.seckillVoucher(voucherId);
+    }
+
+    /** 秒杀接口返回“已受理”后，可通过本接口观察异步创建进度。 */
+    @GetMapping("/{id}/status")
+    public Result queryOrderStatus(@PathVariable("id") Long orderId) {
+        return voucherOrderService.queryOrderStatus(orderId);
+    }
+
+    /** 模拟支付，用来验证支付 CAS 能阻止超时关单覆盖已支付状态。 */
+    @PostMapping("/{id}/pay")
+    public Result payOrder(@PathVariable("id") Long orderId) {
+        return voucherOrderService.payOrder(orderId);
     }
 }
