@@ -1,0 +1,78 @@
+name: Backend CI/CD
+
+on:
+  pull_request:
+  push:
+    branches: [master, main]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Compile and test
+        run: mvn --batch-mode --update-snapshots verify
+
+  publish-and-notify:
+    if: github.event_name == 'push'
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Package application
+        run: mvn --batch-mode -DskipTests package
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Normalize image tag
+        id: image
+        shell: bash
+        run: echo "tag=ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.image.outputs.tag }}
+
+      - name: Notify deployment webhook
+        # 未配置 DEPLOY_WEBHOOK_URL 时只完成镜像发布；配置后由服务器自行拉取并重启。
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          DEPLOY_WEBHOOK_TOKEN: ${{ secrets.DEPLOY_WEBHOOK_TOKEN }}
+          IMAGE: ${{ steps.image.outputs.tag }}
+        if: env.DEPLOY_WEBHOOK_URL != ''
+        run: >-
+          curl --fail --request POST
+          --header "Authorization: Bearer ${DEPLOY_WEBHOOK_TOKEN}"
+          --header "Content-Type: application/json"
+          --data "{\"image\":\"${IMAGE}\",\"commit\":\"${GITHUB_SHA}\"}"
+          "${DEPLOY_WEBHOOK_URL}"
